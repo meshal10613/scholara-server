@@ -32,6 +32,7 @@ async function run() {
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         const usersCollection = client.db("shcolara").collection("users");
+        const scholarshipsCollection = client.db("shcolara").collection("scholarships");
 
         //usersCollection
         app.get("/users", async(req, res) => {
@@ -67,6 +68,18 @@ async function run() {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
             res.status(201).send(result);
+        });
+
+        // scholarshipsCollection
+        app.get("/scholarships", async(req, res) => {
+            const result = await scholarshipsCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.post("/scholarships", async(req, res) => {
+            const serverData = req.body;
+            const result = await scholarshipsCollection.insertOne(serverData);
+            res.send(result);
         });
 
     } finally {
