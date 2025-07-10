@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const port = process.env.port || 3000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@meshal10613.mbbtx0s.mongodb.net/?retryWrites=true&w=majority&appName=meshal10613`;
 
 //middleware
@@ -76,10 +76,30 @@ async function run() {
             res.send(result);
         });
 
+        app.get("/scholarships/:id", async(req, res) => {
+            const {id} = req.params;
+            const query = {
+                _id: new ObjectId(id)
+            };
+            const result = await scholarshipsCollection.findOne(query);
+            res.send(result);
+        });
+
         app.post("/scholarships", async(req, res) => {
             const serverData = req.body;
             const result = await scholarshipsCollection.insertOne(serverData);
             res.send(result);
+        });
+
+        // DELETE a scholarship by ID
+        app.delete("/scholarships/:id", async (req, res) => {
+            const id = req.params.id;
+            try {
+                const result = await scholarshipsCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (err) {
+                res.status(500).json({ message: "Failed to delete scholarship" });
+            }
         });
 
     } finally {
