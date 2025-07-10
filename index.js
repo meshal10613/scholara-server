@@ -36,7 +36,14 @@ async function run() {
 
         //usersCollection
         app.get("/users", async(req, res) => {
-            const result = await usersCollection.find().toArray();
+            const {role} = req.query;
+            let query = {};
+            if(role){
+                query = {
+                    role
+                };
+            };
+            const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
 
@@ -68,6 +75,27 @@ async function run() {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
             res.status(201).send(result);
+        });
+
+        // ✅ PATCH: Update user role
+        app.patch("/users/:id", async (req, res) => {
+            const id = req.params.id;
+            const { role } = req.body;
+
+            if (!["user", "moderator", "admin"].includes(role)) {
+                return res.status(400).json({ message: "Invalid role." });
+            }
+
+            try {
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { role } }
+                );
+                res.send(result)
+            } catch (err) {
+                console.error("Error updating role:", err);
+                res.status(500).json({ message: "Server error while updating role" });
+            }
         });
 
         // scholarshipsCollection
