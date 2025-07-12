@@ -119,6 +119,27 @@ async function run() {
             res.send(result);
         });
 
+        app.put("/scholarships/:id", async (req, res) => {
+            const { id } = req.params;
+            const updatedData = req.body;
+
+            try {
+                const result = await scholarshipsCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updatedData }
+                );
+
+                if (result.modifiedCount > 0) {
+                    res.send(result)
+                } else {
+                    res.status(404).json({ message: "Scholarship not found or no changes made" });
+                }
+            } catch (error) {
+                console.error("Update error:", error);
+                res.status(500).json({ message: "Server error", error });
+            }
+        });
+
         // DELETE a scholarship by ID
         app.delete("/scholarships/:id", async (req, res) => {
             const id = req.params.id;
