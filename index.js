@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.port || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@meshal10613.mbbtx0s.mongodb.net/?retryWrites=true&w=majority&appName=meshal10613`;
@@ -98,6 +99,17 @@ async function run() {
             }
         });
 
+        app.delete("/users/:id", async (req, res) => {
+            const { id } = req.params;
+            try {
+                const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
+                return res.send(result);
+            } catch (error) {
+                console.error("Delete error:", error);
+                return res.status(500).json({ success: false, message: "Deletion failed.", error });
+            }
+        }); 
+
         // scholarshipsCollection
         app.get("/scholarships", async(req, res) => {
             const result = await scholarshipsCollection.find().toArray();
@@ -149,6 +161,20 @@ async function run() {
             } catch (err) {
                 res.status(500).json({ message: "Failed to delete scholarship" });
             }
+        });
+
+        //payment
+        app.post('/create-payment-intent', async (req, res) => {
+            const { amountInCents, id } = req.body;
+            const session = await stripe.paymentIntents.create({
+                // Provide the exact Price ID (for example, price_1234) of the product you want to sell
+                amount: amountInCents, //amount in cents 
+                currency: "bdt",
+                payment_method_types: ['card'],
+                // return_url: `${YOUR_DOMAIN}/return?session_id={CHECKOUT_SESSION_ID}`,
+            });
+
+            res.json({clientSecret: session.client_secret});
         });
 
     } finally {
