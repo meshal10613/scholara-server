@@ -34,6 +34,7 @@ async function run() {
 
         const usersCollection = client.db("shcolara").collection("users");
         const scholarshipsCollection = client.db("shcolara").collection("scholarships");
+        const appliedScholarshipsCollection = client.db("shcolara").collection("appliedScholarships");
 
         //usersCollection
         app.get("/users", async(req, res) => {
@@ -161,6 +162,18 @@ async function run() {
             } catch (err) {
                 res.status(500).json({ message: "Failed to delete scholarship" });
             }
+        });
+
+        // appliedScholarshipsCollection
+        app.get("/appliedScholarships", async(req, res) => {
+            const result = await appliedScholarshipsCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.post("/appliedScholarships", async(req, res) => {
+            const serverData = req.body;
+            const result = await appliedScholarshipsCollection.insertOne(serverData);
+            res.send(result);
         });
 
         //payment
