@@ -176,6 +176,32 @@ async function run() {
             res.send(result);
         });
 
+        // PUT or PATCH: update or add feedback
+        app.put("/appliedScholarships/:id", async (req, res) => {
+            const { id } = req.params;
+            const {feedback} = req.body;
+
+            if (!feedback) {
+                return res.status(400).json({ error: "Feedback is required" });
+            }
+
+            try {
+                const result = await appliedScholarshipsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { feedback } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+
+                res.send(result);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: "Internal server error" });
+            }
+        });
+
         //payment
         app.post('/create-payment-intent', async (req, res) => {
             const { amountInCents, id } = req.body;
