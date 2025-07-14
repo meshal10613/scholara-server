@@ -224,11 +224,11 @@ async function run() {
         });
 
         app.post("/reviews", async(req, res) => {
-            const {userEmail} = req.body;
-            const existReviews = await reviewsCollection.findOne({ userEmail });
+            const {scholarshipId} = req.body;
+            const existReviews = await reviewsCollection.findOne({ scholarshipId });
             if(existReviews){
                 const {rating, comment } = req.body;
-                const query = { userEmail };
+                const query = { scholarshipId };
                 const updatedDoc = {
                     $set: {
                         rating,
@@ -241,6 +241,41 @@ async function run() {
             const serverData = req.body;
             const result = await reviewsCollection.insertOne(serverData);
             res.send(result);
+        });
+
+        // GET /api/average-rating
+        app.get('/average-rating', async (req, res) => {
+            const { scholarshipId } = req.query;
+
+            if (!scholarshipId) {
+                return res.status(400).json({ error: 'Missing scholarshipId in query' });
+            }
+
+            try {
+                const reviews = await reviewsCollection
+                .find({ scholarshipId }) // Adjust if your field is named differently
+                .toArray();
+
+                const totalReviews = reviews.length;
+
+                if (totalReviews === 0) {
+                return res.json({ averageRating: 0, totalReviews: 0 });
+                }
+
+                const totalRating = reviews.reduce(
+                (sum, review) => sum + (review.rating || 0),
+                0
+                );
+                const averageRating = totalRating / totalReviews;
+
+                res.json({
+                    averageRating: parseFloat(averageRating.toFixed(2)),
+                    totalReviews
+                });
+            } catch (error) {
+                console.error('Error calculating average rating:', error);
+                res.status(500).json({ error: 'Failed to calculate average rating' });
+            }
         });
 
         //payment
