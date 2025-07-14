@@ -166,7 +166,21 @@ async function run() {
 
         // appliedScholarshipsCollection
         app.get("/appliedScholarships", async(req, res) => {
-            const result = await appliedScholarshipsCollection.find().toArray();
+            const {email} = req.query;
+            let query = {};
+            if(email){
+                query = { userEmail: email };
+            };
+            const result = await appliedScholarshipsCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.get("/appliedScholarships/:id", async(req, res) => {
+            const {id} = req.params;
+            const query = {
+                _id: new ObjectId(id)
+            };
+            const result = await appliedScholarshipsCollection.findOne(query);
             res.send(result);
         });
 
