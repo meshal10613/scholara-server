@@ -35,6 +35,7 @@ async function run() {
         const usersCollection = client.db("shcolara").collection("users");
         const scholarshipsCollection = client.db("shcolara").collection("scholarships");
         const appliedScholarshipsCollection = client.db("shcolara").collection("appliedScholarships");
+        const reviewsCollection = client.db("shcolara").collection("reviews");
 
         //usersCollection
         app.get("/users", async(req, res) => {
@@ -60,7 +61,7 @@ async function run() {
 
         app.post("/users", async(req, res) => {
             const { email } = req.body;
-            //chech user already exist or not
+            //check user already exist or not
             const existUser = await usersCollection.findOne({ email });
             if(existUser){
                 const { lastSignInTime } = req.body;
@@ -214,6 +215,32 @@ async function run() {
                 console.error(err);
                 res.status(500).json({ error: "Internal server error" });
             }
+        });
+
+        // reviewsCollection
+        app.get("/reviews", async(req, res) => {
+            const result = await reviewsCollection.find().toArray();
+            res.send();
+        });
+
+        app.post("/reviews", async(req, res) => {
+            const {userEmail} = req.body;
+            const existReviews = await reviewsCollection.findOne({ userEmail });
+            if(existReviews){
+                const {rating, comment } = req.body;
+                const query = { userEmail };
+                const updatedDoc = {
+                    $set: {
+                        rating,
+                        comment
+                    }
+                };
+                const result = await reviewsCollection.updateOne(query, updatedDoc);
+                return res.status(200).send(result);
+            };
+            const serverData = req.body;
+            const result = await reviewsCollection.insertOne(serverData);
+            res.send(result);
         });
 
         //payment
