@@ -217,10 +217,29 @@ async function run() {
             }
         });
 
+        app.patch('/appliedScholarships/:id', async (req, res) => {
+            const {id} = req.params;
+
+            try {
+                const result = await appliedScholarshipsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { applicationStatus : 'rejected' } }
+                );
+
+                if (result.modifiedCount === 0) {
+                    return res.status(404).json({ message: 'Scholarship not found or already rejected.' });
+                }
+
+                res.send(result);
+            } catch (err) {
+                res.status(500).json({ message: 'Error updating status', error: err.message });
+            }
+        });
+
         // reviewsCollection
         app.get("/reviews", async(req, res) => {
             const result = await reviewsCollection.find().toArray();
-            res.send();
+            res.send(result);
         });
 
         app.post("/reviews", async(req, res) => {
@@ -241,6 +260,20 @@ async function run() {
             const serverData = req.body;
             const result = await reviewsCollection.insertOne(serverData);
             res.send(result);
+        });
+
+        // DELETE /reviews/:id
+        app.delete('/reviews/:id', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const result = await reviewsCollection.deleteOne({ _id: new ObjectId(id) });
+                if (result.deletedCount > 0) {
+                    return res.send(result);
+                }
+                res.status(404).json({ message: 'Review not found' });
+            } catch (err) {
+                res.status(500).json({ error: err.message });
+            }
         });
 
         // GET /api/average-rating
