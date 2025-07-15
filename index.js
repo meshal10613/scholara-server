@@ -217,6 +217,22 @@ async function run() {
             }
         });
 
+        app.put("/editAppliedScholarship/:id", async(req, res) => {
+            const { id } = req.params;
+            const updateFields = req.body;
+
+            try {
+                const result = await appliedScholarshipsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updateFields }
+                );
+
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: 'Failed to update applied scholarships', error: error.message });
+            }
+        });
+
         app.patch('/appliedScholarships/:id', async (req, res) => {
             const {id} = req.params;
 
