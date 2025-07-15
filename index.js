@@ -242,6 +242,15 @@ async function run() {
             res.send(result);
         });
 
+        app.get("/reviews/:email", async(req, res) => {
+            const {email} = req.params;
+            const query = {
+                userEmail: email
+            };
+            const result = await reviewsCollection.find(query).toArray();
+            res.send(result);
+        });
+
         app.post("/reviews", async(req, res) => {
             const {scholarshipId} = req.body;
             const existReviews = await reviewsCollection.findOne({ scholarshipId });
@@ -260,6 +269,27 @@ async function run() {
             const serverData = req.body;
             const result = await reviewsCollection.insertOne(serverData);
             res.send(result);
+        });
+
+        app.put("/reviews/:id", async(req, res) => {
+            const {id} = req.params;
+            const serverData = req.body;
+            
+            try {
+                const result = await reviewsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { serverData } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+
+                res.send(result);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: "Internal server error" });
+            }
         });
 
         // DELETE /reviews/:id
