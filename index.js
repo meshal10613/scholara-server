@@ -58,6 +58,28 @@ async function run() {
             const result = await usersCollection.findOne(query);
             res.send(result);
         });
+        
+        // GET: Get user role by email
+        app.get('/users/:email/role', async (req, res) => {
+            try {
+                const email = req.params.email;
+
+                if (!email) {
+                    return res.status(400).send({ message: 'Email is required' });
+                }
+
+                const user = await usersCollection.findOne({ email });
+
+                if (!user) {
+                    return res.status(404).send({ message: 'User not found' });
+                }
+
+                res.send({ role: user.role || 'user' });
+            } catch (error) {
+                console.error('Error getting user role:', error);
+                res.status(500).send({ message: 'Failed to get role' });
+            }
+        });
 
         app.post("/users", async(req, res) => {
             const { email } = req.body;
@@ -124,6 +146,11 @@ async function run() {
                 _id: new ObjectId(id)
             };
             const result = await scholarshipsCollection.findOne(query);
+            res.send(result);
+        });
+
+        app.get("/topScholarship", async(req, res) => {
+            const result = await scholarshipsCollection.find().sort({ applicationFees: -1, postDate: -1}).limit(6).toArray();
             res.send(result);
         });
 
