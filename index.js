@@ -194,11 +194,21 @@ async function run() {
 
         // appliedScholarshipsCollection
         app.get("/appliedScholarships", async(req, res) => {
-            const {email} = req.query;
+            const {email, role} = req.query;
             let query = {};
             if(email){
                 query = { userEmail: email };
             };
+            if(role === "applicationDeadline"){
+                const result = await appliedScholarshipsCollection.find().sort({ applicationDeadline : -1 }).toArray();
+                res.send(result);
+                return result;
+            }
+            if(role === "currentDate"){
+                const result = await appliedScholarshipsCollection.find().sort({ currentDate : -1 }).toArray();
+                res.send(result);
+                return result;
+            }
             const result = await appliedScholarshipsCollection.find(query).toArray();
             res.send(result);
         });
