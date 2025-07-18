@@ -136,8 +136,33 @@ async function run() {
 
         // scholarshipsCollection
         app.get("/scholarships", async(req, res) => {
-            const result = await scholarshipsCollection.find().toArray();
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+            const skip = page * size;
+            const result = await scholarshipsCollection.find().skip(skip).limit(size).toArray();
+            for(const res of result){
+                const query = {
+                    scholarshipId: (res._id).toString()
+                }
+                const reviews = await reviewsCollection
+                    .find(query) // Adjust if your field is named differently
+                    .toArray();
+
+                const totalReviews = reviews.length;
+
+                const totalRating = reviews.reduce(
+                    (sum, review) => sum + (review.rating || 0),
+                    0
+                );
+                const averageRating = totalRating / totalReviews || 0;
+                res.rating = averageRating;
+            }
             res.send(result);
+        });
+
+        app.get("/scholarshipsCount", async(req, res) => {
+            const count = await scholarshipsCollection.estimatedDocumentCount();
+            res.send({count});
         });
 
         app.get("/scholarships/:id", async(req, res) => {
