@@ -183,11 +183,26 @@ async function run() {
                 _id: new ObjectId(id)
             };
             const result = await scholarshipsCollection.findOne(query);
+            const queryRating = {
+                scholarshipId: (id).toString()
+            };
+            const reviews = await reviewsCollection
+                .find(queryRating) // Adjust if your field is named differently
+                .toArray();
+
+            const totalReviews = reviews.length;
+
+            const totalRating = reviews.reduce(
+                (sum, review) => sum + (review.rating || 0),
+                0
+            );
+            const averageRating = totalRating / totalReviews || 0;
+            result.rating = averageRating;
             res.send(result);
         });
 
         app.get("/topScholarship", async(req, res) => {
-            const result = await scholarshipsCollection.find().sort({ applicationFees: -1, postDate: -1}).limit(6).toArray();
+            const result = await scholarshipsCollection.find().sort({ applicationFees: 1, postDate: -1}).limit(6).toArray();
             res.send(result);
         });
 
@@ -328,7 +343,14 @@ async function run() {
 
         // reviewsCollection
         app.get("/reviews", async(req, res) => {
-            const result = await reviewsCollection.find().toArray();
+            const { scholarshipId } = req.query;
+            let query = {};
+            if(scholarshipId){
+                query = {
+                    scholarshipId
+                };
+            }
+            const result = await reviewsCollection.find(query).toArray();
             res.send(result);
         });
 
