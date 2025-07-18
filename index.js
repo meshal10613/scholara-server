@@ -136,10 +136,22 @@ async function run() {
 
         // scholarshipsCollection
         app.get("/scholarships", async(req, res) => {
+            const search = req.query.search;
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
             const skip = page * size;
-            const result = await scholarshipsCollection.find().skip(skip).limit(size).toArray();
+            let filter = {};
+            if (search && search.trim() !== '') {
+                const regex = new RegExp(search, 'i'); // case-insensitive regex
+                filter = {
+                    $or: [
+                        { scholarshipName: { $regex: regex } },
+                        { universityName: { $regex: regex } },
+                        { degree: { $regex: regex } }
+                    ]
+                };
+            }
+            const result = await scholarshipsCollection.find(filter).skip(skip).limit(size).toArray();
             for(const res of result){
                 const query = {
                     scholarshipId: (res._id).toString()
