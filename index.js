@@ -5,6 +5,7 @@ const app = express();
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.port || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const admin = require("firebase-admin");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@meshal10613.mbbtx0s.mongodb.net/?retryWrites=true&w=majority&appName=meshal10613`;
 
 //middleware
@@ -13,6 +14,32 @@ app.use(cors());
 
 app.get("/", async(req, res) => {
     res.send("Server is running....");
+});
+
+const verifyFirbaseToken = async(req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    if(!token){
+        res.status(401).status({message: "unauthorized access"});
+    };
+    //verify token
+    try{
+        const decocded = await admin.auth().verifyIdToken(token);
+        req.decocded = decocded;
+        next();
+    }catch(error){
+        return res.status(403).send({message: "forbidden access"});
+    }
+};
+
+const decocded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString("utf-8");
+const serviceAccount = JSON.parse(decocded);
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
 });
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -38,7 +65,7 @@ async function run() {
         const reviewsCollection = client.db("shcolara").collection("reviews");
 
         //usersCollection
-        app.get("/users", async(req, res) => {
+        app.get("/users",verifyFirbaseToken, async(req, res) => {
             const {role} = req.query;
             let query = {};
             if(role){
@@ -50,7 +77,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/users/:email", async(req, res) =>{
+        app.get("/users/:email",verifyFirbaseToken, async(req, res) =>{
             const {email} = req.params;
             const query = {
                 email
@@ -177,7 +204,7 @@ async function run() {
             res.send({count});
         });
 
-        app.get("/scholarships/:id", async(req, res) => {
+        app.get("/scholarships/:id",verifyFirbaseToken, async(req, res) => {
             const {id} = req.params;
             const query = {
                 _id: new ObjectId(id)
@@ -245,7 +272,7 @@ async function run() {
         });
 
         // appliedScholarshipsCollection
-        app.get("/appliedScholarships", async(req, res) => {
+        app.get("/appliedScholarships",verifyFirbaseToken, async(req, res) => {
             const {email, role} = req.query;
             let query = {};
             if(email){
@@ -341,8 +368,14 @@ async function run() {
             }
         });
 
+        app.delete("/appliedScholarships/:id", async(req, res) => {
+            const {id} = req.params;
+            const result = await appliedScholarshipsCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result);
+        });
+
         // reviewsCollection
-        app.get("/reviews", async(req, res) => {
+        app.get("/reviews",verifyFirbaseToken, async(req, res) => {
             const { scholarshipId } = req.query;
             let query = {};
             if(scholarshipId){
@@ -354,7 +387,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/reviews/:email", async(req, res) => {
+        app.get("/reviews/:email", verifyFirbaseToken, async(req, res) => {
             const {email} = req.params;
             const query = {
                 userEmail: email
