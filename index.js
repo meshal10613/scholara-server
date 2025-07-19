@@ -64,6 +64,14 @@ async function run() {
         const appliedScholarshipsCollection = client.db("shcolara").collection("appliedScholarships");
         const reviewsCollection = client.db("shcolara").collection("reviews");
 
+        app.get('/admin-stats', verifyFirbaseToken, async (req, res) => {
+            const users = await usersCollection.countDocuments();
+            const scholarships = await scholarshipsCollection.countDocuments();
+            const appliedScholarships = await appliedScholarshipsCollection.countDocuments();
+            const reviews = await reviewsCollection.countDocuments();
+            res.send({users, scholarships, appliedScholarships, reviews});
+        });
+
         //usersCollection
         app.get("/users",verifyFirbaseToken, async(req, res) => {
             const {role} = req.query;
