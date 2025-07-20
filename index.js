@@ -95,7 +95,7 @@ async function run() {
         });
         
         // GET: Get user role by email
-        app.get('/users/:email/role', async (req, res) => {
+        app.get('/users/:email/role',verifyFirbaseToken, async (req, res) => {
             try {
                 const email = req.params.email;
 
@@ -138,7 +138,7 @@ async function run() {
         });
 
         // ✅ PATCH: Update user role
-        app.patch("/users/:id", async (req, res) => {
+        app.patch("/users/:id",verifyFirbaseToken, async (req, res) => {
             const id = req.params.id;
             const { role } = req.body;
 
@@ -158,7 +158,7 @@ async function run() {
             }
         });
 
-        app.delete("/users/:id", async (req, res) => {
+        app.delete("/users/:id",verifyFirbaseToken, async (req, res) => {
             const { id } = req.params;
             try {
                 const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
@@ -247,7 +247,7 @@ async function run() {
             res.send(result);
         });
 
-        app.put("/scholarships/:id", async (req, res) => {
+        app.put("/scholarships/:id",verifyFirbaseToken, async (req, res) => {
             const { id } = req.params;
             const updatedData = req.body;
 
@@ -269,7 +269,7 @@ async function run() {
         });
 
         // DELETE a scholarship by ID
-        app.delete("/scholarships/:id", async (req, res) => {
+        app.delete("/scholarships/:id",verifyFirbaseToken, async (req, res) => {
             const id = req.params.id;
             try {
                 const result = await scholarshipsCollection.deleteOne({ _id: new ObjectId(id) });
@@ -300,7 +300,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/appliedScholarships/:id", async(req, res) => {
+        app.get("/appliedScholarships/:id", verifyFirbaseToken, async(req, res) => {
             const {id} = req.params;
             const query = {
                 _id: new ObjectId(id)
@@ -357,7 +357,7 @@ async function run() {
             }
         });
 
-        app.patch('/appliedScholarships/:id', async (req, res) => {
+        app.patch('/appliedScholarships/:id', verifyFirbaseToken, async (req, res) => {
             const {id} = req.params;
 
             try {
@@ -376,7 +376,7 @@ async function run() {
             }
         });
 
-        app.delete("/appliedScholarships/:id", async(req, res) => {
+        app.delete("/appliedScholarships/:id", verifyFirbaseToken, async(req, res) => {
             const {id} = req.params;
             const result = await appliedScholarshipsCollection.deleteOne({ _id: new ObjectId(id) });
             res.send(result);
@@ -424,7 +424,7 @@ async function run() {
             res.send(result);
         });
 
-        app.put("/reviews/:id", async(req, res) => {
+        app.put("/reviews/:id", verifyFirbaseToken, async(req, res) => {
             const {id} = req.params;
             const serverData = req.body;
             
@@ -446,7 +446,7 @@ async function run() {
         });
 
         // DELETE /reviews/:id
-        app.delete('/reviews/:id', async (req, res) => {
+        app.delete('/reviews/:id', verifyFirbaseToken, async (req, res) => {
             const { id } = req.params;
             try {
                 const result = await reviewsCollection.deleteOne({ _id: new ObjectId(id) });
