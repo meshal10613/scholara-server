@@ -16,25 +16,6 @@ app.get("/", async(req, res) => {
     res.send("Server is running....");
 });
 
-const verifyFirbaseToken = async(req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    const token = authHeader.split(" ")[1];
-    if(!token){
-        res.status(401).status({message: "unauthorized access"});
-    };
-    //verify token
-    try{
-        const decocded = await admin.auth().verifyIdToken(token);
-        req.decocded = decocded;
-        next();
-    }catch(error){
-        return res.status(403).send({message: "forbidden access"});
-    }
-};
-
 const decocded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString("utf-8");
 const serviceAccount = JSON.parse(decocded);
 
@@ -63,6 +44,25 @@ async function run() {
         const scholarshipsCollection = client.db("shcolara").collection("scholarships");
         const appliedScholarshipsCollection = client.db("shcolara").collection("appliedScholarships");
         const reviewsCollection = client.db("shcolara").collection("reviews");
+
+        const verifyFirbaseToken = async(req, res, next) => {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+                return res.status(401).json({ message: "Unauthorized" });
+            }
+            const token = authHeader.split(" ")[1];
+            if(!token){
+                res.status(401).status({message: "unauthorized access"});
+            };
+            //verify token
+            try{
+                const decocded = await admin.auth().verifyIdToken(token);
+                req.decocded = decocded;
+                next();
+            }catch(error){
+                return res.status(403).send({message: "forbidden access"});
+            }
+        };
 
         app.get('/admin-stats', verifyFirbaseToken, async (req, res) => {
             const users = await usersCollection.countDocuments();
@@ -197,22 +197,23 @@ async function run() {
 
                 const totalReviews = reviews.length;
 
-                const totalRating = reviews.reduce(
-                    (sum, review) => sum + (review.rating || 0),
-                    0
-                );
+                let totalRating = 0;
+                for(let i of reviews){
+                    const newRating = parseFloat(i.rating);
+                    totalRating = newRating + totalRating;
+                };
                 const averageRating = totalRating / totalReviews || 0;
                 res.rating = averageRating;
             }
             res.send(result);
         });
 
-        app.get("/scholarshipsCount", async(req, res) => {
+        app.get("/scholarshipsCount", verifyFirbaseToken, async(req, res) => {
             const count = await scholarshipsCollection.estimatedDocumentCount();
             res.send({count});
         });
 
-        app.get("/scholarships/:id",verifyFirbaseToken, async(req, res) => {
+        app.get("/scholarships/:id", verifyFirbaseToken, async(req, res) => {
             const {id} = req.params;
             const query = {
                 _id: new ObjectId(id)
@@ -226,11 +227,11 @@ async function run() {
                 .toArray();
 
             const totalReviews = reviews.length;
-
-            const totalRating = reviews.reduce(
-                (sum, review) => sum + (review.rating || 0),
-                0
-            );
+            let totalRating = 0;
+            for(let i of reviews){
+                const newRating = parseFloat(i.rating);
+                totalRating = newRating + totalRating;
+            }
             const averageRating = totalRating / totalReviews || 0;
             result.rating = averageRating;
             res.send(result);
@@ -280,7 +281,7 @@ async function run() {
         });
 
         // appliedScholarshipsCollection
-        app.get("/appliedScholarships",verifyFirbaseToken, async(req, res) => {
+        app.get("/appliedScholarships", verifyFirbaseToken, async(req, res) => {
             const {email, role} = req.query;
             let query = {};
             if(email){
@@ -316,7 +317,7 @@ async function run() {
         });
 
         // PUT or PATCH: update or add feedback
-        app.put("/appliedScholarships/:id", async (req, res) => {
+        app.put("/appliedScholarships/:id",verifyFirbaseToken, async (req, res) => {
             const { id } = req.params;
             const {feedback} = req.body;
 
@@ -341,7 +342,7 @@ async function run() {
             }
         });
 
-        app.put("/editAppliedScholarship/:id", async(req, res) => {
+        app.put("/editAppliedScholarship/:id", verifyFirbaseToken, async(req, res) => {
             const { id } = req.params;
             const updateFields = req.body;
 
@@ -383,7 +384,7 @@ async function run() {
         });
 
         // reviewsCollection
-        app.get("/reviews",verifyFirbaseToken, async(req, res) => {
+        app.get("/reviews", verifyFirbaseToken, async(req, res) => {
             const { scholarshipId } = req.query;
             let query = {};
             if(scholarshipId){
@@ -405,33 +406,34 @@ async function run() {
         });
 
         app.post("/reviews", async(req, res) => {
-            const {scholarshipId} = req.body;
-            const existReviews = await reviewsCollection.findOne({ scholarshipId });
-            if(existReviews){
-                const {rating, comment } = req.body;
-                const query = { scholarshipId };
-                const updatedDoc = {
-                    $set: {
-                        rating,
-                        comment
-                    }
-                };
-                const result = await reviewsCollection.updateOne(query, updatedDoc);
-                return res.status(200).send(result);
-            };
+            // const {scholarshipId, userEmail} = req.body;
+            // const existReviews = await reviewsCollection.findOne({ scholarshipId, userEmail });
+            // console.log(existReviews)
+            // if(existReviews){
+            //     const {rating, comment } = req.body;
+            //     const query = { scholarshipId };
+            //     const updatedDoc = {
+            //         $set: {
+            //             rating,
+            //             comment
+            //         }
+            //     };
+            //     const result = await reviewsCollection.updateOne(query, updatedDoc);
+            //     return res.status(200).send(result);
+            // };
             const serverData = req.body;
             const result = await reviewsCollection.insertOne(serverData);
             res.send(result);
         });
 
-        app.put("/reviews/:id", verifyFirbaseToken, async(req, res) => {
+        app.patch("/reviews/:id", verifyFirbaseToken, async(req, res) => {
             const {id} = req.params;
-            const serverData = req.body;
+            const {rating, comment} = req.body;
             
             try {
                 const result = await reviewsCollection.updateOne(
                     { _id: new ObjectId(id) },
-                    { $set: { serverData } }
+                    { $set: { rating, comment } }
                 );
 
                 if (result.matchedCount === 0) {
