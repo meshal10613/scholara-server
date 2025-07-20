@@ -208,7 +208,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/scholarshipsCount", verifyFirbaseToken, async(req, res) => {
+        app.get("/scholarshipsCount", async(req, res) => {
             const count = await scholarshipsCollection.estimatedDocumentCount();
             res.send({count});
         });
