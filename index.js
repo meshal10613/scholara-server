@@ -193,7 +193,7 @@ const client = new MongoClient(uri, {
                 sortOptions = { universityName: -1 };
             break;
             default:
-            sortOptions = {}; // no sorting
+            sortOptions = {};
         }
         const result = await scholarshipsCollection.find(filter).sort(sortOptions).skip(skip).limit(size).toArray();
         for(const res of result){
