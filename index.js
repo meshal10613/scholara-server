@@ -172,6 +172,7 @@ const client = new MongoClient(uri, {
         const page = parseInt(req.query.page);
         const size = parseInt(req.query.size);
         const skip = page * size;
+        const sort = req.query.sort;
         let filter = {};
         if (search && search.trim() !== '') {
             const regex = new RegExp(search, 'i'); // case-insensitive regex
@@ -182,8 +183,19 @@ const client = new MongoClient(uri, {
                     { degree: { $regex: regex } }
                 ]
             };
+        };
+        //sorting
+        switch (sort) {
+            case 'az':
+                sortOptions = { universityName: 1 };
+            break;
+            case 'za':
+                sortOptions = { universityName: -1 };
+            break;
+            default:
+            sortOptions = {}; // no sorting
         }
-        const result = await scholarshipsCollection.find(filter).skip(skip).limit(size).toArray();
+        const result = await scholarshipsCollection.find(filter).sort(sortOptions).skip(skip).limit(size).toArray();
         for(const res of result){
             const query = {
                 scholarshipId: (res._id).toString()
